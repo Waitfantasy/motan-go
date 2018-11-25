@@ -1,0 +1,100 @@
+hash: 67a21ba28292f3a409ec3f59b8354187a2c6324a49c6a05b505311e534b4b958
+updated: 2018-11-24T11:08:35.409843332+08:00
+imports:
+- name: github.com/afex/hystrix-go
+  version: fa1af6a1f4f56e0e50d427fe901cd604d8c6fb8a
+  subpackages:
+  - hystrix
+  - hystrix/metric_collector
+  - hystrix/rolling
+- name: github.com/beberlei/fastcgi-serve
+  version: 4676005f65b7c5460d837b79d8f10d4ad3abedec
+  subpackages:
+  - fcgiclient
+- name: github.com/gogo/protobuf
+  version: 100ba4e885062801d56799d78530b73b178a78f3
+  subpackages:
+  - gogoproto
+  - proto
+- name: github.com/golang/protobuf
+  version: 882cf97a83ad205fd22af574246a3bc647d7a7d2
+  subpackages:
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
+- name: github.com/mitchellh/mapstructure
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
+- name: github.com/montanaflynn/stats
+  version: eeaced052adbcfeea372c749c281099ed7fdaa38
+- name: github.com/opentracing/opentracing-go
+  version: be550b025b433cdfa2f11efb962afa2ea3c4d967
+  subpackages:
+  - ext
+  - log
+- name: github.com/rcrowley/go-metrics
+  version: 3113b8401b8a98917cde58f8bbd42a1b1c03b1fd
+- name: github.com/samuel/go-zookeeper
+  version: c4fab1ac1bec58281ad0667dc3f0907a9476ac47
+  subpackages:
+  - zk
+- name: github.com/smallnest/rpcx
+  version: 329cf0078113b11f4facda756ec5a9b297e52b6d
+  subpackages:
+  - log
+- name: github.com/stretchr/testify
+  version: 8019298d9fa5a04fc2ad10ae03349df3483096a6
+  subpackages:
+  - assert
+- name: golang.org/x/net
+  version: adae6a3d119ae4890b46832a2e88a95adc62b8e7
+  subpackages:
+  - context
+  - http/httpguts
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - trace
+- name: golang.org/x/text
+  version: 6f44c5a2ea40ee3593d98cdcc905cc1fdaa660e2
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: b5d43981345bdb2c233eb4bf3277847b48c6fdc6
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 61d37c5d657a47e4404fd6823bd598341a2595de
+  subpackages:
+  - balancer
+  - codes
+  - connectivity
+  - credentials
+  - grpclb/grpc_lb_v1/messages
+  - grpclog
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - stats
+  - status
+  - tap
+  - transport
+- name: gopkg.in/yaml.v2
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+testImports:
+- name: github.com/davecgh/go-spew
+  version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
