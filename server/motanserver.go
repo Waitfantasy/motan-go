@@ -71,11 +71,12 @@ func (m *MotanServer) Destroy() {
 
 func (m *MotanServer) run() {
 	for {
+		// 等待连接
 		conn, err := m.listener.Accept()
 		if err != nil {
 			vlog.Errorf("motan server accept from port %v fail. err:%s\n", m.listener.Addr(), err.Error())
 		} else {
-
+			// 异步处理连接
 			go m.handleConn(conn)
 		}
 	}
@@ -84,8 +85,10 @@ func (m *MotanServer) run() {
 func (m *MotanServer) handleConn(conn net.Conn) {
 	defer conn.Close()
 	defer motan.HandlePanic(nil)
+	// reader
 	buf := bufio.NewReader(conn)
 
+	// 获取对端ip
 	var ip string
 	if ta, ok := conn.RemoteAddr().(*net.TCPAddr); ok {
 		ip = ta.IP.String()
@@ -94,6 +97,7 @@ func (m *MotanServer) handleConn(conn net.Conn) {
 	}
 
 	for {
+		// 解析对端数据包
 		request, t, err := mpro.DecodeWithTime(buf)
 		if err != nil {
 			if err.Error() != "EOF" {
@@ -112,6 +116,7 @@ func (m *MotanServer) handleConn(conn net.Conn) {
 				trace.PutReqSpan(&motan.Span{Name: motan.Decode, Time: time.Now()})
 			}
 		}
+		// 处理请求
 		go m.processReq(request, trace, conn)
 	}
 }

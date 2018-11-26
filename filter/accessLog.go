@@ -19,7 +19,7 @@ func (t *AccessLogEndPointFilter) GetName() string {
 	return "accessLog"
 }
 
-func (t *AccessLogEndPointFilter) NewFilter(url *motan.URL) motan.Filter {
+func (t *AccessLogEndPointFilter) NewFilter(connurl *motan.URL) motan.Filter {
 	return &AccessLogEndPointFilter{}
 }
 

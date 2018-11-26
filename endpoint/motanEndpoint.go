@@ -58,9 +58,11 @@ func (m *MotanEndpoint) Initialize() {
 	m.destroyCh = make(chan struct{}, 1)
 	connectTimeout := m.url.GetTimeDuration("connectTimeout", time.Millisecond, defaultConnectTimeout)
 
+	// 建立连接的函数
 	factory := func() (net.Conn, error) {
 		return net.DialTimeout("tcp", m.url.GetAddressStr(), connectTimeout)
 	}
+	// 初始化连接池
 	channels, err := NewChannelPool(defaultChannelPoolSize, factory, nil, m.serialization)
 	if err != nil {
 		vlog.Errorf("Channel pool init failed. err:%s\n", err.Error())
@@ -259,10 +261,15 @@ type Channel struct {
 	address       string
 
 	// connection
+	// 每个channel持有的真实连接
+	// 在创建channel pool时初始化
 	conn    net.Conn
+
+	// 通过conn创建的buf
 	bufRead *bufio.Reader
 
 	// send
+	// 发送的数据 通过channel写入
 	sendCh chan sendReady
 
 	// stream
@@ -280,10 +287,16 @@ type Channel struct {
 }
 
 type Stream struct {
+	// 持有的channel
 	channel *Channel
+
+	// motan 协议信息 发送
 	sendMsg *mpro.Message
-	// recv msg
+
+	// motan协议信息 接收
 	recvMsg      *mpro.Message
+
+	// 接受到消息时的通知channel
 	recvNotifyCh chan struct{}
 	// timeout
 	deadline time.Time
@@ -294,15 +307,18 @@ type Stream struct {
 }
 
 func (s *Stream) Send() error {
+	// 到期定时器
 	timer := time.NewTimer(s.deadline.Sub(time.Now()))
 	defer timer.Stop()
 
+	// 序列化消息
 	buf := s.sendMsg.Encode()
 	if s.rc != nil && s.rc.Tc != nil {
 		s.rc.Tc.PutReqSpan(&motan.Span{Name: motan.Encode, Addr: s.channel.address, Time: time.Now()})
 	}
 	ready := sendReady{data: buf.Bytes()}
 	select {
+	// 发送消息
 	case s.channel.sendCh <- ready:
 		if s.rc != nil && s.rc.Tc != nil {
 			s.rc.Tc.PutReqSpan(&motan.Span{Name: motan.Send, Addr: s.channel.address, Time: time.Now()})
@@ -316,6 +332,7 @@ func (s *Stream) Send() error {
 }
 
 // Recv sync recv
+// 接收消息 异步接收
 func (s *Stream) Recv() (*mpro.Message, error) {
 	defer func() {
 		s.Close()
@@ -323,6 +340,7 @@ func (s *Stream) Recv() (*mpro.Message, error) {
 	timer := time.NewTimer(s.deadline.Sub(time.Now()))
 	defer timer.Stop()
 	select {
+	// 收到消息
 	case <-s.recvNotifyCh:
 		msg := s.recvMsg
 		if msg == nil {
@@ -336,10 +354,12 @@ func (s *Stream) Recv() (*mpro.Message, error) {
 	}
 }
 
+// 收到通知
 func (s *Stream) notify(msg *mpro.Message, t time.Time) {
 	defer func() {
 		s.Close()
 	}()
+
 	if s.rc != nil {
 		if s.rc.Tc != nil {
 			s.rc.Tc.PutResSpan(&motan.Span{Name: motan.Receive, Addr: s.channel.address, Time: t})
@@ -380,6 +400,7 @@ func (c *Channel) NewStream(msg *mpro.Message, rc *motan.RPCContext) (*Stream, e
 	if c.IsClosed() {
 		return nil, ErrChannelShutdown
 	}
+	// 创建stream对象
 	s := &Stream{
 		channel:      c,
 		sendMsg:      msg,
@@ -453,6 +474,7 @@ func (c *Channel) recv() {
 
 func (c *Channel) recvLoop() error {
 	for {
+		// 接收消息
 		res, t, err := mpro.DecodeWithTime(c.bufRead)
 		if err != nil {
 			return err
@@ -476,6 +498,7 @@ func (c *Channel) send() {
 	})
 	for {
 		select {
+		// 当收到ready信号时 发送消息
 		case ready := <-c.sendCh:
 			if ready.data != nil {
 				// TODO need async?
@@ -499,6 +522,7 @@ func (c *Channel) send() {
 
 func (c *Channel) handleHeartbeat(msg *mpro.Message, t time.Time) error {
 	c.heartbeatLock.Lock()
+	fmt.Println("recv hearbeat msg")
 	stream := c.heartbeats[msg.Header.RequestID]
 	c.heartbeatLock.Unlock()
 	if stream == nil {
@@ -548,6 +572,7 @@ func (c *Channel) Close() error {
 type ConnFactory func() (net.Conn, error)
 
 type ChannelPool struct {
+	// 多个channel
 	channels      chan *Channel
 	channelsLock  sync.Mutex
 	factory       ConnFactory
@@ -635,6 +660,8 @@ func NewChannelPool(poolCap int, factory ConnFactory, config *Config, serializat
 	return channelPool, nil
 }
 
+// 创建一个channel
+// 会启用两个协程
 func buildChannel(conn net.Conn, config *Config, serialization motan.Serialization) *Channel {
 	if conn == nil {
 		return nil
@@ -657,8 +684,13 @@ func buildChannel(conn net.Conn, config *Config, serialization motan.Serializati
 		address:       conn.RemoteAddr().String(),
 	}
 
+	// 启用接收协程
+	// 从服务端接收消息
 	go channel.recv()
 
+
+	// 启用发送协程
+	// 像服务端发送消息
 	go channel.send()
 
 	return channel

@@ -11,14 +11,23 @@ import (
 
 type MotanCluster struct {
 	Context        *motan.Context
+	// url对象
 	url            *motan.URL
+	// 服务发现组件
 	Registrys      []motan.Registry
+	// HA 组件
 	HaStrategy     motan.HaStrategy
+	// LB 组件
 	LoadBalance    motan.LoadBalance
+	// endpoint
 	Refers         []motan.EndPoint
+	// 过滤器
 	Filters        []motan.Filter
+	// 集群过滤器
 	clusterFilter  motan.ClusterFilter
+	// 扩展
 	extFactory     motan.ExtensionFactory
+	// 通过服务发现的refers
 	registryRefers map[string][]motan.EndPoint
 	notifyLock     sync.Mutex
 	available      bool
@@ -57,14 +66,16 @@ func (m *MotanCluster) Call(request motan.Request) (res motan.Response) {
 	vlog.Infoln("cluster:" + m.GetIdentity() + "is not available!")
 	return motan.BuildExceptionResponse(request.GetRequestID(), &motan.Exception{ErrCode: 500, ErrMsg: "cluster not available, maybe caused by degrade", ErrType: motan.ServiceException})
 }
+
+// 集群初始化
 func (m *MotanCluster) InitCluster() bool {
 	m.registryRefers = make(map[string][]motan.EndPoint)
 	//ha
 	m.HaStrategy = m.extFactory.GetHa(m.url)
 	//lb
 	m.LoadBalance = m.extFactory.GetLB(m.url)
-	fmt.Println(m.LoadBalance)
 	//filter
+	// 初始化过滤器: 集群的过滤器以及endpoints过滤器
 	m.initFilters()
 
 	if m.clusterFilter == nil {
@@ -78,6 +89,7 @@ func (m *MotanCluster) InitCluster() bool {
 	m.closed = false
 
 	// parse registry and subscribe
+	// 解析服务注册和服务发现
 	m.parseRegistry()
 
 	vlog.Infof("init MotanCluster %s\n", m.GetIdentity())

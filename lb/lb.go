@@ -26,10 +26,12 @@ var (
 )
 
 func RegistDefaultLb(extFactory motan.ExtensionFactory) {
+	// 注册 random 策略lb
 	extFactory.RegistExtLb(Random, NewWeightLbFunc(func(url *motan.URL) motan.LoadBalance {
 		return &RandomLB{url: url}
 	}))
 
+	// 注册roundrobin 策略lb
 	extFactory.RegistExtLb(Roundrobin, NewWeightLbFunc(func(url *motan.URL) motan.LoadBalance {
 		return &RoundrobinLB{url: url}
 	}))
@@ -64,6 +66,7 @@ func (w *WeightedLbWraper) OnRefresh(endpoints []motan.EndPoint) {
 	// weighted lb
 	lbmutex.Lock()
 	defer lbmutex.Unlock()
+	// 保存endpoints的组 通过 k => endpoints
 	groupEp := make(map[string][]motan.EndPoint)
 	for _, ep := range endpoints {
 		ges := groupEp[ep.GetURL().Group]
@@ -95,9 +98,13 @@ func (w *WeightedLbWraper) OnRefresh(endpoints []motan.EndPoint) {
 	for g, e := range groupEp {
 		//build lb
 		lb := w.newLb(w.url)
+		// 将endpoints刷入负载均衡器
 		lb.OnRefresh(e)
+
+		// 持有负载均衡器
 		wr.groupLb[g] = lb
 		//build real weight
+		// 权重
 		wi := gws[g]
 		if wi < 1 || wi > 100 { //weight normalization
 			wi = defaultWeight
