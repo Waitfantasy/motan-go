@@ -188,6 +188,8 @@ func (m *MSContext) Initialize() {
 
 // RegisterService register service with serviceId for config ref.
 // the type.string will used as serviceId if sid is not set. e.g. 'packageName.structName'
+
+// 注册一个服务
 func (m *MSContext) RegisterService(s interface{}, sid string) error {
 	if s == nil {
 		vlog.Errorln("MSContext register service is nil!")
@@ -205,6 +207,7 @@ func (m *MSContext) RegisterService(s interface{}, sid string) error {
 		ref = t.String()
 	}
 	// check export config
+	// 检查导出配置是否和当前注册的service一致
 	for _, url := range m.context.ServiceURLs {
 		if url.Parameters != nil && ref == url.Parameters[motan.RefKey] {
 			hasConfig = true
@@ -215,6 +218,7 @@ func (m *MSContext) RegisterService(s interface{}, sid string) error {
 		vlog.Errorf("can not find export config for register service. service:%+v\n", s)
 		return errors.New("can not find export config for register service")
 	}
+	// 加入到map中
 	m.serviceImpls[ref] = s
 	return nil
 }
